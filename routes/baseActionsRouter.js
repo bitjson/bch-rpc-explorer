@@ -112,6 +112,55 @@ router.get("/", function(req, res, next) {
 
 		res.locals.blocksUntilDifficultyAdjustment = ((res.locals.difficultyPeriod + 1) * coinConfig.difficultyAdjustmentBlockCount) - data.blockList[0].height;
 
+		if (req.query.upgradeStatusDemo) {
+			const demoMode = (req.query.upgradeStatusDemo || "").toString().toLowerCase();
+			const nowMtp = res.locals.blockChainInfo && res.locals.blockChainInfo.mediantime
+				? parseInt(res.locals.blockChainInfo.mediantime)
+				: Math.round(new Date().getTime() / 1000);
+
+			const sampleUpgrades = {
+				eta: {
+					name: "May 2026 Upgrade (tempnet)",
+					mempool_activation_mtp: nowMtp + (350 * 24 * 60 * 60),
+					software_expiration_mtp: nowMtp + (30 * 24 * 60 * 60),
+					block_preactivation_height: null,
+					block_preactivation_hash: null,
+					block_postactivation_height: null,
+					block_postactivation_hash: null,
+					mempool_activated: false
+				},
+				pending: {
+					name: "May 2026 Upgrade (tempnet)",
+					mempool_activation_mtp: nowMtp - (5 * 60),
+					software_expiration_mtp: nowMtp + (30 * 24 * 60 * 60),
+					block_preactivation_height: 271015,
+					block_preactivation_hash: "00000000023062becd19275fa2ec7cbe32d3eb5329708ccb006143865f010af7",
+					block_postactivation_height: null,
+					block_postactivation_hash: null,
+					mempool_activated: true
+				},
+				active: {
+					name: "May 2026 Upgrade (tempnet)",
+					mempool_activation_mtp: nowMtp - (24 * 60 * 60),
+					software_expiration_mtp: nowMtp + (29 * 24 * 60 * 60),
+					block_preactivation_height: 271015,
+					block_preactivation_hash: "00000000023062becd19275fa2ec7cbe32d3eb5329708ccb006143865f010af7",
+					block_postactivation_height: 271016,
+					block_postactivation_hash: "00000000163a426b4dfe4a484b8753c918f58b8cb9bf716cbf7be2d871867bc4",
+					mempool_activated: true
+				}
+			};
+
+			if (sampleUpgrades[demoMode]) {
+				res.locals.blockChainInfo = Object.assign({}, res.locals.blockChainInfo);
+				res.locals.blockChainInfo.upgrade_status = Object.assign(
+					{},
+					res.locals.blockChainInfo.upgrade_status || {},
+					sampleUpgrades[demoMode]
+				);
+			}
+		}
+
 		Promise.all(promises).then(function(promiseResults) {
 			res.locals.mempoolInfo = promiseResults[0];
 			res.locals.miningInfo = promiseResults[1];
